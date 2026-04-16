@@ -1,0 +1,29 @@
+# InternVL 2.5-26B Compatibility Environment
+# ============================================
+# InternVL's custom modeling code crashes on transformers >= 4.49.
+# This file pins the exact versions needed for a SEPARATE venv.
+#
+# Usage (inside the container):
+#   python3 -m venv --system-site-packages .venvs/sensory_internvl_compat
+#   source .venvs/sensory_internvl_compat/bin/activate
+#   pip install -r requirements_internvl.txt
+#
+# See CONTAINER_AND_ENVIRONMENT_GUIDE.md for full details.
+
+# Pinned for InternVL compatibility
+transformers==4.48.3
+tokenizers<0.22
+numpy<2
+
+# Shared dependencies
+accelerate
+peft
+bitsandbytes
+pandas
+pillow
+tqdm
+scikit-learn
+scipy
+einops
+timm
+torchvision

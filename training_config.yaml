@@ -1,0 +1,99 @@
+# ===========================================================================
+# FoodSense-VL  –  Training Configuration
+# Two-stage QLoRA fine-tuning of Gemma 3 27B-IT
+# ===========================================================================
+
+# ── Base Model ──────────────────────────────────────────────────────────────
+model:
+  name: google/gemma-3-27b-it
+  quantization: 8-bit            # bitsandbytes load_in_8bit
+  attn_implementation: flash_attention_2
+
+# ── LoRA (adapter_config.json ground truth) ─────────────────────────────────
+lora:
+  r: 16
+  lora_alpha: 32
+  lora_dropout: 0.15
+  bias: none
+  task_type: CAUSAL_LM
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+
+# ── Stage 1: Human Grounding ───────────────────────────────────────────────
+# Train on human-annotated ratings + descriptors only (no MAmmoTH).
+# Grounds the adapter in real sensory judgments before expansion.
+stage1:
+  mode: human_only
+  epochs: 1
+  max_steps: 300                 # override via MAX_STEPS env var
+  batch_size: 2                  # per device
+  gradient_accumulation_steps: 32  # effective batch = 64
+  learning_rate: 5e-6
+  warmup_ratio: 0.03
+  weight_decay: 0.05
+  max_grad_norm: 1.0
+  max_length: 2048
+  optimizer: adamw_torch
+  bf16: true
+  gradient_checkpointing: true
+  save_steps: 25
+  save_total_limit: -1           # keep all for checkpoint selection
+  early_stop_patience: 3
+  require_prose_senses: 2
+  fixed_sense_order: false
+
+# ── Stage 2: MAmmoTH Expansion ─────────────────────────────────────────────
+# Continue from best Stage-1 checkpoint.  Adds MAmmoTH-style synthetic
+# prose targets for richer, longer reasoning while preserving grounding.
+stage2:
+  mode: stage2_from (Stage-1 best checkpoint)
+  epochs: 1
+  max_steps: 800                 # override via MAX_STEPS env var
+  batch_size: 1                  # per device (longer sequences)
+  gradient_accumulation_steps: 64  # effective batch = 64
+  learning_rate: 2e-6            # lower LR to preserve Stage-1 grounding
+  warmup_ratio: 0.03
+  weight_decay: 0.05
+  max_grad_norm: 1.0
+  max_length: 3072               # longer context for MAmmoTH prose
+  optimizer: adamw_torch
+  bf16: true
+  gradient_checkpointing: true
+  save_steps: 25
+  save_total_limit: -1
+  early_stop_patience: 5
+  require_prose_senses: 4        # all senses must have rich prose
+  fixed_sense_order: true        # Taste, Smell, Texture, Sound
+
+# ── Hardware Requirements ───────────────────────────────────────────────────
+hardware:
+  gpu: 1x NVIDIA H100-80GB
+  vram: ~54GB (8-bit quantization + Flash Attention 2)
+  ram: 80GB
+  storage: ~100GB (base model cache + dataset + checkpoints)
+
+# ── Data ────────────────────────────────────────────────────────────────────
+data:
+  human_csv: data/FINAL_DATASET_COMPLETE_with_rescaling.csv
+  image_dir: data/Images
+  mammoth_targets: mammoth_style_target_lookup_v2_gemma.json
+
+# ── Usage ───────────────────────────────────────────────────────────────────
+#
+# 1. Precompute MAmmoTH synthetic targets (needed for Stage 2):
+#      python precompute_targets.py
+#
+# 2. Stage 1 — Human grounding:
+#      sbatch slurm/train_stage1.sbatch
+#
+# 3. Stage 2 — MAmmoTH expansion (set STAGE1_DIR to best Stage-1 checkpoint):
+#      STAGE1_DIR=checkpoints/<stage1>/checkpoint-<N> sbatch slurm/train_stage2.sbatch
+#
+# 4. Evaluate:
+#      sbatch slurm/eval_ours.sbatch

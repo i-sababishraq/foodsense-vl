@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Environments
+env/
+venv/
+sensory_env*/
+test_venv/
+.venv/
+.venvs/
+
+# Container images
+containers/
+
+# Temporary test/debug scripts
+run_*_test.sh
+run_*_terminal.sh
+
+# Secrets
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Model checkpoints (download from HuggingFace)
+checkpoints/
+
+# Data (hosted on HuggingFace)
+data/
+
+# Paper source (not published via GitHub)
+paper/
+
+# Generated diagrams
+foodsense_pipeline_execution_order.png
+
+# Outputs (generated at runtime)
+logs/
+eval_outputs*/
+infer_outputs/
+analysis_outputs/
+
+# Intermediate artifacts
+mammoth_*.json
+rag_context_lookup.json
+*.sif
+*.whl
+
+# Caches
+cache/
+wandb/

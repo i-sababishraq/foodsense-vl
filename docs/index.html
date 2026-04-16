@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FoodSense: Cross-Sensory Inference from Visual Cues</title>
+  <meta name="description" content="FoodSense: Predicting Taste, Smell, Texture, and Sound from Food Images using Vision-Language Models" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <style>
+    /* ===== DESIGN TOKENS ===== */
+    :root {
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+      --color-bg: #0a0a0a;
+      --color-bg-card: #141414;
+      --color-bg-card-hover: #1a1a1a;
+      --color-bg-elevated: #1e1e1e;
+      --color-border: #2a2a2a;
+      --color-border-subtle: #1f1f1f;
+
+      --color-text: #e8e8e8;
+      --color-text-secondary: #999;
+      --color-text-muted: #666;
+
+      --color-accent: #6366f1;
+      --color-accent-light: #818cf8;
+      --color-accent-glow: rgba(99, 102, 241, 0.15);
+
+      --color-taste: #ef4444;
+      --color-smell: #22c55e;
+      --color-texture: #f59e0b;
+      --color-sound: #a855f7;
+
+      --color-success: #22c55e;
+      --color-warning: #f59e0b;
+      --color-danger: #ef4444;
+
+      --max-w: 1100px;
+      --section-gap: 100px;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    /* ===== RESET ===== */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    a { color: var(--color-accent-light); text-decoration: none; transition: color 0.2s; }
+    a:hover { color: #c7d2fe; }
+    img { max-width: 100%; display: block; }
+
+    /* ===== NAV ===== */
+    .nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(10, 10, 10, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--color-border-subtle);
+      padding: 0 24px;
+    }
+    .nav-inner {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+    }
+    .nav-logo {
+      font-weight: 800;
+      font-size: 1rem;
+      color: var(--color-text);
+      letter-spacing: -0.02em;
+    }
+    .nav-links { display: flex; gap: 24px; }
+    .nav-links a {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .nav-links a:hover { color: var(--color-text); }
+
+    /* ===== SECTIONS ===== */
+    .section {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding: var(--section-gap) 24px;
+    }
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-accent-light);
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      margin-bottom: 20px;
+    }
+    .section-subtitle {
+      font-size: 1.1rem;
+      color: var(--color-text-secondary);
+      line-height: 1.7;
+      max-width: 700px;
+    }
+
+    /* ===== HERO ===== */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(ellipse at 50% 30%, var(--color-accent-glow) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: 999px;
+      padding: 6px 16px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      margin-bottom: 32px;
+      position: relative;
+    }
+    .hero-badge .dot {
+      width: 6px; height: 6px;
+      background: var(--color-success);
+      border-radius: 50%;
+    }
+    .hero h1 {
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+      max-width: 900px;
+      margin-bottom: 24px;
+      position: relative;
+    }
+    .hero h1 .gradient {
+      background: linear-gradient(135deg, var(--color-taste) 0%, var(--color-smell) 25%, var(--color-texture) 50%, var(--color-sound) 75%, var(--color-accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-desc {
+      font-size: 1.15rem;
+      color: var(--color-text-secondary);
+      max-width: 650px;
+      line-height: 1.8;
+      margin-bottom: 40px;
+      position: relative;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      position: relative;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+    .btn-primary {
+      background: var(--color-accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: #4f46e5; color: #fff; }
+    .btn-outline {
+      background: transparent;
+      border-color: var(--color-border);
+      color: var(--color-text);
+    }
+    .btn-outline:hover { border-color: var(--color-text-secondary); color: #fff; }
+    .hero-authors {
+      margin-top: 48px;
+      position: relative;
+    }
+    .hero-authors p {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--color-text);
+    }
+    .hero-authors .affiliation {
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+      margin-top: 4px;
+    }
+
+    /* ===== STATS ROW ===== */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-top: 60px;
+      position: relative;
+    }
+    .stat-card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 24px;
+      text-align: center;
+    }
+    .stat-card .stat-value {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+    .stat-card .stat-label {
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ===== CARDS GRID ===== */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 40px;
+    }
+    .card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 28px;
+      transition: all 0.2s;
+    }
+    .card:hover {
+      border-color: var(--color-accent);
+      background: var(--color-bg-card-hover);
+    }
+    .card-icon {
+      width: 40px; height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      font-size: 1.2rem;
+      margin-bottom: 16px;
+    }
+    .card h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .card p {
+      font-size: 0.9rem;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ===== BENCHMARK TABLE ===== */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 32px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      background: var(--color-bg-card);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    thead th {
+      background: var(--color-bg-elevated);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.72rem;
+      color: var(--color-text-secondary);
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--color-border);
+      white-space: nowrap;
+    }
+    tbody td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--color-border-subtle);
+      font-variant-numeric: tabular-nums;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: rgba(99, 102, 241, 0.04); }
+    .row-highlight td {
+      background: rgba(99, 102, 241, 0.08);
+      font-weight: 600;
+    }
+    .row-trap td {
+      background: rgba(239, 68, 68, 0.06);
+      color: var(--color-text-secondary);
+    }
+    .best { color: var(--color-success); font-weight: 700; }
+    .worst { color: var(--color-text-muted); }
+    .model-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+    }
+    .model-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* ===== MAE TRAP ===== */
+    .trap-box {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(245, 158, 11, 0.06) 100%);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: var(--radius);
+      padding: 32px;
+      margin-top: 40px;
+    }
+    .trap-box h3 {
+      color: var(--color-danger);
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .trap-box p {
+      color: var(--color-text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+    .trap-comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .trap-card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 20px;
+      text-align: center;
+    }
+    .trap-card .trap-model { font-weight: 700; font-size: 0.85rem; margin-bottom: 12px; }
+    .trap-card .trap-metric { font-size: 0.8rem; color: var(--color-text-secondary); margin-bottom: 4px; }
+    .trap-card .trap-value { font-size: 1.4rem; font-weight: 800; }
+
+    /* ===== PIPELINE FIGURE ===== */
+    .pipeline-figure {
+      margin-top: 40px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--color-bg-card);
+    }
+    .pipeline-figure img {
+      width: 100%;
+      display: block;
+    }
+    .pipeline-figure figcaption {
+      padding: 16px 24px;
+      font-size: 0.85rem;
+      color: var(--color-text-secondary);
+      border-top: 1px solid var(--color-border-subtle);
+    }
+
+    /* ===== PER-SENSE PILLS ===== */
+    .sense-pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 24px;
+    }
+    .sense-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: 1px solid;
+    }
+    .sense-pill.taste { border-color: var(--color-taste); color: var(--color-taste); background: rgba(239, 68, 68, 0.08); }
+    .sense-pill.smell { border-color: var(--color-smell); color: var(--color-smell); background: rgba(34, 197, 94, 0.08); }
+    .sense-pill.texture { border-color: var(--color-texture); color: var(--color-texture); background: rgba(245, 158, 11, 0.08); }
+    .sense-pill.sound { border-color: var(--color-sound); color: var(--color-sound); background: rgba(168, 85, 247, 0.08); }
+
+    /* ===== CALLOUT ===== */
+    .callout {
+      background: var(--color-bg-card);
+      border-left: 3px solid var(--color-accent);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: 20px 24px;
+      margin-top: 32px;
+    }
+    .callout-warning {
+      border-left-color: var(--color-warning);
+    }
+    .callout h4 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .callout p {
+      font-size: 0.9rem;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ===== CITATION ===== */
+    .citation-block {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-top: 24px;
+      position: relative;
+    }
+    .citation-block pre {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--color-text-secondary);
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.6;
+    }
+    .copy-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border);
+      color: var(--color-text-secondary);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: all 0.2s;
+    }
+    .copy-btn:hover { border-color: var(--color-accent); color: var(--color-text); }
+
+    /* ===== LIMITATIONS ===== */
+    .limitations-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+      margin-top: 32px;
+    }
+    .limitation-item {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+    .limitation-item h4 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .limitation-item p {
+      font-size: 0.85rem;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ===== DATASET CARD ===== */
+    .dataset-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 32px;
+    }
+    .ds-stat {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 20px;
+    }
+    .ds-stat .ds-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--color-accent-light);
+    }
+    .ds-stat .ds-label {
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+      margin-top: 4px;
+    }
+
+    /* ===== PER-SENSE TABLE ===== */
+    .sense-table-header {
+      display: flex;
+      gap: 8px;
+      margin-top: 32px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .sense-tab {
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--color-border);
+      background: transparent;
+      color: var(--color-text-secondary);
+      font-family: var(--font-sans);
+      transition: all 0.2s;
+    }
+    .sense-tab.active {
+      background: var(--color-accent);
+      border-color: var(--color-accent);
+      color: #fff;
+    }
+    .sense-tab:hover:not(.active) {
+      border-color: var(--color-text-muted);
+      color: var(--color-text);
+    }
+
+    /* ===== FOOTER ===== */
+    .footer {
+      border-top: 1px solid var(--color-border-subtle);
+      padding: 40px 24px;
+      text-align: center;
+    }
+    .footer p {
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .trap-comparison { grid-template-columns: 1fr; }
+      .dataset-stats { grid-template-columns: 1fr; }
+      .section-title { font-size: 1.7rem; }
+      .hero h1 { font-size: 2rem; }
+      :root { --section-gap: 60px; }
+    }
+
+    /* ===== TWO COL LAYOUT ===== */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: start;
+      margin-top: 40px;
+    }
+    @media (max-width: 768px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    /* ===== STAGE COMPARISON ===== */
+    .stage-comparison {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 32px;
+    }
+    .stage-card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .stage-card.featured {
+      border-color: var(--color-accent);
+    }
+    .stage-card h4 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    .stage-metric {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--color-border-subtle);
+      font-size: 0.82rem;
+    }
+    .stage-metric:last-child { border-bottom: none; }
+    .stage-metric .metric-name { color: var(--color-text-secondary); }
+    .stage-metric .metric-value { font-weight: 700; font-variant-numeric: tabular-nums; }
+    @media (max-width: 768px) {
+      .stage-comparison { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================== NAV ============================== -->
+<nav class="nav" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">FoodSense</a>
+    <div class="nav-links">
+      <a href="#abstract">Abstract</a>
+      <a href="#contributions">Contributions</a>
+      <a href="#method">Method</a>
+      <a href="#results">Results</a>
+
+      <a href="#dataset">Dataset</a>
+      <a href="#limitations">Limitations</a>
+      <a href="#citation">Citation</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============================== HERO ============================== -->
+<header class="hero" id="top">
+  <div class="hero-badge">
+    <span class="dot"></span>
+    CVPR 2026 Submission
+  </div>
+
+  <h1>
+    <span class="gradient">Cross-Sensory Inference</span><br />
+    from Visual Cues
+  </h1>
+
+  <p class="hero-desc">
+    Predicting taste, smell, texture, and sound from food images.
+    A 544K-image dataset, human-annotated benchmark, and two-stage
+    vision-language model for multisensory food understanding.
+  </p>
+
+  <div class="hero-actions">
+    <a href="https://github.com/i-sababishraq/foodsense-vl" class="btn btn-primary" target="_blank" rel="noopener">
+      <i class="fab fa-github"></i> Code
+    </a>
+    <a href="https://huggingface.co/datasets/sababishraq/foodsense-dataset" class="btn btn-outline" target="_blank" rel="noopener">
+      <i class="fas fa-database"></i> Dataset
+    </a>
+    <a href="https://huggingface.co/sababishraq/foodsense-vl" class="btn btn-outline" target="_blank" rel="noopener">
+      <i class="fas fa-cube"></i> Model
+    </a>
+  </div>
+
+  <div class="hero-authors">
+    <p>Sabab Ishraq<sup>1</sup> &middot; Aarushi Aarushi<sup>2</sup> &middot; Juncai Jiang<sup>2</sup> &middot; Chen Chen<sup>3</sup></p>
+    <p class="affiliation" style="font-size: 0.85rem; max-width: 700px; margin: 8px auto 0; line-height: 1.5; color: var(--color-text-secondary);">
+      <sup>1</sup>College of Engineering and Computer Science, University of Central Florida, Orlando, FL, USA<br>
+      <sup>2</sup>College of Business Administration, University of Central Florida, Orlando, FL, USA<br>
+      <sup>3</sup>Institute of Artificial Intelligence, University of Central Florida, Orlando, FL, USA
+    </p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value" style="color: var(--color-accent-light);">544K</div>
+      <div class="stat-label">Food Images</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color: var(--color-taste);">4</div>
+      <div class="stat-label">Sensory Modalities</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color: var(--color-smell);">438</div>
+      <div class="stat-label">Human-Annotated Test</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color: var(--color-sound);">6</div>
+      <div class="stat-label">Models Benchmarked</div>
+    </div>
+  </div>
+
+  <!-- Teaser Figure -->
+  <div class="pipeline-figure" style="margin-top: 48px; max-width: 800px;">
+    <img src="assets/teaser.png" alt="FoodSense-VL teaser: food images with predicted sensory ratings" loading="lazy" />
+    <figcaption>FoodSense-VL predicts four sensory dimensions&mdash;taste, smell, texture, and sound&mdash;from a single food image, producing calibrated 1&ndash;5 ratings with natural-language justifications.</figcaption>
+  </div>
+</header>
+
+<!-- ============================== ABSTRACT ============================== -->
+<section class="section" id="abstract">
+  <div class="section-label">Abstract</div>
+  <h2 class="section-title">Can machines learn to taste, smell, and feel from images alone?</h2>
+  <p class="section-subtitle">
+    Humans routinely infer non-visual sensory properties of food&mdash;imagining the crunch of a chip
+    or the aroma of fresh bread&mdash;from visual appearance alone. We formalize this problem as
+    <strong>cross-sensory inference from visual cues</strong> and introduce <strong>FoodSense</strong>,
+    a large-scale dataset pairing 544,312 Yelp food images with crowd-sourced review text, and a
+    human-annotated evaluation set of 438 images scored on four sensory dimensions: taste, smell,
+    texture, and sound.
+  </p>
+  <p class="section-subtitle" style="margin-top: 16px;">
+    Building on this resource, we propose <strong>FoodSense-VL</strong>, a two-stage QLoRA fine-tuning
+    pipeline applied to Gemma 3 27B that first learns from human sensory annotations, then expands
+    using MAmmoTH-style synthetic targets. We benchmark FoodSense-VL against seven vision-language
+    models and reveal that conventional MAE rankings can be misleading&mdash;a constant-mean baseline
+    achieves the lowest MAE of all, underscoring the need for correlation-aware evaluation.
+  </p>
+</section>
+
+<!-- ============================== CONTRIBUTIONS ============================== -->
+<section class="section" id="contributions">
+  <div class="section-label">Key Contributions</div>
+  <h2 class="section-title">What we built</h2>
+
+  <div class="cards-grid">
+    <div class="card">
+      <div class="card-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--color-taste);">
+        <i class="fas fa-database"></i>
+      </div>
+      <h3>FoodSense Dataset</h3>
+      <p>544,312 food images paired with Yelp review text, spanning diverse cuisines and restaurants. Includes a 438-image human-annotated evaluation set scored on four sensory dimensions.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background: rgba(99, 102, 241, 0.1); color: var(--color-accent-light);">
+        <i class="fas fa-brain"></i>
+      </div>
+      <h3>FoodSense-VL</h3>
+      <p>Two-stage QLoRA fine-tuning of Gemma 3 27B-IT. Stage 1 learns from 438 human annotations; Stage 2 expands via MAmmoTH-style synthetic targets from 3,590 training images.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background: rgba(34, 197, 94, 0.1); color: var(--color-success);">
+        <i class="fas fa-chart-bar"></i>
+      </div>
+      <h3>Comprehensive Benchmark</h3>
+      <p>Nine models evaluated across seven metrics (MAE, CalMAE, Pearson, Spearman, CCC, Ordinal Accuracy, &sigma;<sub>pred</sub>) with human inter-rater agreement as ceiling.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--color-warning);">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <h3>The MAE Trap</h3>
+      <p>We show that a constant-mean predictor achieves the lowest MAE (0.377), proving raw MAE alone rewards conservative hedging over genuine sensory discrimination.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== METHOD ============================== -->
+<section class="section" id="method">
+  <div class="section-label">Method</div>
+  <h2 class="section-title">Two-Stage Fine-Tuning Pipeline</h2>
+  <p class="section-subtitle">
+    FoodSense-VL builds on Gemma 3 27B-IT using a two-stage QLoRA strategy designed to
+    combine the precision of human annotations with the coverage of synthetic data expansion.
+  </p>
+
+  <!-- Pipeline Figure -->
+  <div class="pipeline-figure" style="background: #fff; padding: 24px;">
+    <img src="assets/pipeline.png" alt="FoodSense-VL two-stage training pipeline" loading="lazy" style="max-width: 700px; margin: 0 auto;" />
+    <figcaption style="background: var(--color-bg-card);"><strong>Figure 2.</strong> FoodSense-VL pipeline. A food image and human sensory ratings are fed to Gemma to generate sensory rationales. The fine-tuned FoodSense-VL model then produces sensory predictions with justifications, validated by an AdaptLLM judge.</figcaption>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <h3 style="margin-bottom: 16px; font-size: 1.05rem;">Stage 1: Human Sensory Alignment</h3>
+      <p style="color: var(--color-text-secondary); font-size: 0.9rem; line-height: 1.7;">
+        Fine-tunes Gemma 3 on 438 human-annotated images using 4-bit QLoRA.
+        Each training example pairs a food image with ground-truth ratings (1&ndash;5 scale)
+        and descriptive rationales for taste, smell, texture, and sound.
+        This stage teaches the model to ground sensory language in visual features.
+      </p>
+
+      <h3 style="margin-top: 32px; margin-bottom: 16px; font-size: 1.05rem;">Stage 2: MAmmoTH Expansion</h3>
+      <p style="color: var(--color-text-secondary); font-size: 0.9rem; line-height: 1.7;">
+        Extends training to 3,590 images using synthetic targets generated by the Stage-1 model
+        in a MAmmoTH-style self-expansion pipeline. This improves correlation metrics
+        (Pearson +0.04, Spearman +0.03) at the cost of higher MAE, primarily
+        driven by the sound dimension.
+      </p>
+    </div>
+    <div>
+      <div class="stage-comparison" style="grid-template-columns: 1fr; gap: 12px; margin-top: 0;">
+        <div class="stage-card">
+          <h4>Stage 1 &mdash; v2_s1_ckpt200</h4>
+          <div class="stage-metric">
+            <span class="metric-name">MAE &darr;</span>
+            <span class="metric-value" style="color: var(--color-success);">0.487</span>
+          </div>
+          <div class="stage-metric">
+            <span class="metric-name">Pearson r &uarr;</span>
+            <span class="metric-value">0.257</span>
+          </div>
+          <div class="stage-metric">
+            <span class="metric-name">Lin's CCC &uarr;</span>
+            <span class="metric-value">0.241</span>
+          </div>
+          <div class="stage-metric">
+            <span class="metric-name">&sigma;<sub>pred</sub></span>
+            <span class="metric-value">0.491</span>
+          </div>
+        </div>
+        <div class="stage-card featured">
+          <h4>Stage 2 &mdash; FoodSense-VL (v2_s2_ckpt200)</h4>
+          <div class="stage-metric">
+            <span class="metric-name">MAE &darr;</span>
+            <span class="metric-value">0.633</span>
+          </div>
+          <div class="stage-metric">
+            <span class="metric-name">Pearson r &uarr;</span>
+            <span class="metric-value" style="color: var(--color-success);">0.297</span>
+          </div>
+          <div class="stage-metric">
+            <span class="metric-name">Lin's CCC &uarr;</span>
+            <span class="metric-value" style="color: var(--color-success);">0.238</span>
+          </div>
+          <div class="stage-metric">
+            <span class="metric-name">&sigma;<sub>pred</sub></span>
+            <span class="metric-value" style="color: var(--color-success);">0.591</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top: 40px;">
+    <h4>Why two stages?</h4>
+    <p>Stage 1 achieves the best overall MAE by learning calibrated predictions from human labels.
+       Stage 2 sacrifices some MAE to gain <strong>higher correlation and prediction diversity</strong>
+       (&sigma;<sub>pred</sub> rises from 0.491 to 0.591), meaning the model better distinguishes
+       between different food items rather than hedging toward the mean.</p>
+  </div>
+</section>
+
+<!-- ============================== RESULTS ============================== -->
+<section class="section" id="results">
+  <div class="section-label">Results</div>
+  <h2 class="section-title">Nine-Model Benchmark</h2>
+  <p class="section-subtitle">
+    All models evaluated on 438 human-annotated test images across four sensory dimensions.
+    Human inter-rater LOO MAE = 0.793 provides the agreement ceiling.
+    <strong>Sorted by Pearson r</strong> to reflect true discrimination ability.
+  </p>
+
+  <!-- Sense tabs -->
+  <div class="sense-table-header">
+    <button class="sense-tab active" onclick="showSense('overall')">Overall</button>
+    <button class="sense-tab" onclick="showSense('taste')" style="--tab-color: var(--color-taste);">Taste</button>
+    <button class="sense-tab" onclick="showSense('smell')" style="--tab-color: var(--color-smell);">Smell</button>
+    <button class="sense-tab" onclick="showSense('texture')" style="--tab-color: var(--color-texture);">Texture</button>
+    <button class="sense-tab" onclick="showSense('sound')" style="--tab-color: var(--color-sound);">Sound</button>
+  </div>
+
+  <div class="table-container">
+    <table id="benchmark-table" role="table" aria-label="Benchmark results">
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Type</th>
+          <th>MAE &darr;</th>
+          <th>Cal. MAE &darr;</th>
+          <th>Pearson r &uarr;</th>
+          <th>Spearman &rho; &uarr;</th>
+          <th>Lin's CCC &uarr;</th>
+          <th>&sigma;<sub>pred</sub></th>
+          <th>Ord. Acc. &uarr;</th>
+        </tr>
+      </thead>
+      <tbody id="benchmark-body">
+        <!-- Populated by JS -->
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout" style="margin-top: 24px;">
+    <h4>Reading the table</h4>
+    <p><strong>Pearson r</strong> measures linear correlation between predictions and human ground truth&mdash;higher is better.
+       <strong>Lin's CCC</strong> combines correlation with calibration agreement.
+       <strong>&sigma;<sub>pred</sub></strong> measures prediction diversity; ~0 means the model outputs nearly constant values.
+       Human annotators disagree by LOO MAE = 0.793, so any model MAE near or below that is approaching the noise floor.</p>
+  </div>
+</section>
+
+
+
+<!-- ============================== DATASET ============================== -->
+<section class="section" id="dataset">
+  <div class="section-label">Dataset</div>
+  <h2 class="section-title">FoodSense Dataset</h2>
+  <p class="section-subtitle">
+    The largest food image collection purpose-built for multisensory prediction,
+    sourced from Yelp and annotated by crowd workers.
+  </p>
+
+  <div class="dataset-stats">
+    <div class="ds-stat">
+      <div class="ds-value">544,312</div>
+      <div class="ds-label">Total food images from Yelp</div>
+    </div>
+    <div class="ds-stat">
+      <div class="ds-value">438</div>
+      <div class="ds-label">Human-annotated test images</div>
+    </div>
+    <div class="ds-stat">
+      <div class="ds-value">3,590</div>
+      <div class="ds-label">Training images (with review text)</div>
+    </div>
+    <div class="ds-stat">
+      <div class="ds-value">4</div>
+      <div class="ds-label">Sensory dimensions rated</div>
+    </div>
+    <div class="ds-stat">
+      <div class="ds-value">1&ndash;5</div>
+      <div class="ds-label">Rating scale per dimension</div>
+    </div>
+    <div class="ds-stat">
+      <div class="ds-value">3+</div>
+      <div class="ds-label">Annotators per image</div>
+    </div>
+  </div>
+
+  <div class="sense-pills" style="margin-top: 32px;">
+    <span class="sense-pill taste"><i class="fas fa-utensils"></i> Taste</span>
+    <span class="sense-pill smell"><i class="fas fa-wind"></i> Smell</span>
+    <span class="sense-pill texture"><i class="fas fa-hand-paper"></i> Texture</span>
+    <span class="sense-pill sound"><i class="fas fa-volume-up"></i> Sound</span>
+  </div>
+
+  <div class="callout" style="margin-top: 32px;">
+    <h4>Human Agreement</h4>
+    <p>
+      Inter-annotator pairwise MAE = <strong>1.039</strong>; leave-one-out vs. mean MAE = <strong>0.793</strong>.
+      Sensory perception is inherently subjective&mdash;even humans disagree by nearly 1 point on a 5-point scale.
+      This context is essential when interpreting model errors.
+    </p>
+  </div>
+</section>
+
+<!-- ============================== REPRODUCIBILITY ============================== -->
+<section class="section" id="reproducibility">
+  <div class="section-label">Reproducibility</div>
+  <h2 class="section-title">Open and Reproducible</h2>
+
+  <div class="cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+    <div class="card">
+      <div class="card-icon" style="background: rgba(99, 102, 241, 0.1); color: var(--color-accent-light);">
+        <i class="fab fa-github"></i>
+      </div>
+      <h3>Code</h3>
+      <p>Full training, inference, and evaluation pipeline. SBATCH scripts for SLURM-based HPC clusters.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background: rgba(34, 197, 94, 0.1); color: var(--color-success);">
+        <i class="fas fa-weight-hanging"></i>
+      </div>
+      <h3>Model Weights</h3>
+      <p>QLoRA adapters for both Stage-1 and Stage-2 checkpoints. Base model: Gemma 3 27B-IT.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--color-warning);">
+        <i class="fas fa-table"></i>
+      </div>
+      <h3>Benchmark Data</h3>
+      <p>All predictions (JSONL) and evaluation metrics (CSV/JSON) for 9 models across 5 senses.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== LIMITATIONS ============================== -->
+<section class="section" id="limitations">
+  <div class="section-label">Transparency</div>
+  <h2 class="section-title">Limitations &amp; Known Issues</h2>
+  <p class="section-subtitle">
+    We believe in transparent reporting. Here are the known limitations of our work.
+  </p>
+
+  <div class="limitations-grid">
+    <div class="limitation-item">
+      <h4><span style="color: var(--color-sound);"><i class="fas fa-volume-mute"></i></span> Sound Dimension Regression</h4>
+      <p>Stage-2 MAmmoTH expansion degrades Sound MAE from 0.517 to 0.889. The synthetic expansion
+         appears to overfit the sound dimension, which has the least visual signal.</p>
+    </div>
+    <div class="limitation-item">
+      <h4><span style="color: var(--color-warning);"><i class="fas fa-globe-americas"></i></span> Domain Bias</h4>
+      <p>All images come from Yelp, heavily skewing toward North American restaurant food.
+         Performance on non-Western cuisines, home-cooked meals, or raw ingredients is untested.</p>
+    </div>
+    <div class="limitation-item">
+      <h4><span style="color: var(--color-taste);"><i class="fas fa-users"></i></span> Annotator Demographics</h4>
+      <p>Sensory perception is culturally influenced. Our annotator pool may not represent
+         the global diversity of food perception norms.</p>
+    </div>
+    <div class="limitation-item">
+      <h4><span style="color: var(--color-accent-light);"><i class="fas fa-vial"></i></span> Test Set Size</h4>
+      <p>438 human-annotated test images provides moderate statistical power.
+         Confidence intervals on some per-sense metrics may be wide.</p>
+    </div>
+    <div class="limitation-item">
+      <h4><span style="color: var(--color-danger);"><i class="fas fa-chart-line"></i></span> Correlation Ceiling</h4>
+      <p>The best Pearson r achieved is 0.297 (overall). While above zero-shot baselines,
+         this indicates substantial room for improvement in cross-sensory prediction.</p>
+    </div>
+    <div class="limitation-item">
+      <h4><span style="color: var(--color-smell);"><i class="fas fa-balance-scale"></i></span> Rating Distribution</h4>
+      <p>Sensory ratings cluster near the center of the 1&ndash;5 scale, creating a
+         distribution where mean-prediction strategies are deceptively competitive on MAE.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== CITATION ============================== -->
+<section class="section" id="citation">
+  <div class="section-label">Citation</div>
+  <h2 class="section-title">Cite Our Work</h2>
+
+  <div class="citation-block">
+    <button class="copy-btn" onclick="copyCitation()" id="copy-btn">
+      <i class="fas fa-copy"></i> Copy
+    </button>
+    <pre id="bibtex">@inproceedings{ishraq2026foodsense,
+  title     = {FoodSense: A Multisensory Food Dataset and Benchmark for
+               Predicting Taste, Smell, Texture, and Sound from Images},
+  author    = {Ishraq, Sabab and Aarushi, Aarushi and
+               Jiang, Juncai and Chen, Chen},
+  booktitle = {Proceedings of the IEEE/CVF Conference on Computer
+               Vision and Pattern Recognition (CVPR)},
+  year      = {2026}
+}</pre>
+  </div>
+</section>
+
+<!-- ============================== FOOTER ============================== -->
+<footer class="footer">
+  <p>FoodSense &copy; 2026 &middot; University of Central Florida</p>
+  <p style="margin-top: 8px;">
+    <a href="#top">Back to top</a>
+  </p>
+</footer>
+
+<!-- ============================== JAVASCRIPT ============================== -->
+<script>
+// Benchmark data from eval_outputs/benchmark_results.json (canonical source)
+const BENCHMARK = {
+  "overall": [
+    { model: "FoodSense-VL (Ours)", type: "Fine-tuned (S2)", mae: 0.633, cal_mae: 0.362, pearson: 0.297, spearman: 0.274, ccc: 0.238, sigma: 0.591, ord_acc: 0.542, highlight: true, dot: "#6366f1" },
+    { model: "Gemma 3 27B-IT", type: "Zero-shot", mae: 0.613, cal_mae: 0.371, pearson: 0.250, spearman: 0.225, ccc: 0.167, sigma: 0.361, ord_acc: 0.569, highlight: false, dot: "#64748b" },
+    { model: "Qwen2.5-VL-32B", type: "Zero-shot", mae: 0.508, cal_mae: 0.369, pearson: 0.255, spearman: 0.214, ccc: 0.159, sigma: 0.346, ord_acc: 0.663, highlight: false, dot: "#64748b" },
+    { model: "InternVL2.5-26B", type: "Zero-shot", mae: 0.477, cal_mae: 0.377, pearson: 0.186, spearman: 0.143, ccc: 0.078, sigma: 0.146, ord_acc: 0.661, highlight: false, dot: "#64748b" },
+    { model: "LLaVA-v1.6-34B", type: "Zero-shot", mae: 0.471, cal_mae: 0.375, pearson: 0.174, spearman: 0.172, ccc: 0.111, sigma: 0.238, ord_acc: 0.673, highlight: false, dot: "#64748b" },
+    { model: "Food-LLaMA-11B", type: "Zero-shot", mae: 0.740, cal_mae: 0.371, pearson: 0.080, spearman: 0.089, ccc: 0.055, sigma: 0.650, ord_acc: 0.474, highlight: false, dot: "#64748b" },
+  ],
+  "taste": [
+    { model: "FoodSense-VL (Ours)", type: "Fine-tuned (S2)", mae: 0.413, cal_mae: 0.371, pearson: 0.382, spearman: 0.357, ccc: 0.382, sigma: 0.499, ord_acc: 0.708, highlight: true, dot: "#6366f1" },
+    { model: "Qwen2.5-VL-32B", type: "Zero-shot", mae: 0.495, cal_mae: 0.383, pearson: 0.323, spearman: 0.313, ccc: 0.181, sigma: 0.277, ord_acc: 0.703, highlight: false, dot: "#64748b" },
+    { model: "InternVL2.5-26B", type: "Zero-shot", mae: 0.639, cal_mae: 0.397, pearson: 0.221, spearman: 0.163, ccc: 0.029, sigma: 0.083, ord_acc: 0.691, highlight: false, dot: "#64748b" },
+    { model: "Gemma 3 27B-IT", type: "Zero-shot", mae: 0.416, cal_mae: 0.397, pearson: 0.209, spearman: 0.189, ccc: 0.167, sigma: 0.252, ord_acc: 0.689, highlight: false, dot: "#64748b" },
+    { model: "LLaVA-v1.6-34B", type: "Zero-shot", mae: 0.627, cal_mae: 0.402, pearson: 0.126, spearman: 0.112, ccc: 0.031, sigma: 0.155, ord_acc: 0.698, highlight: false, dot: "#64748b" },
+    { model: "Food-LLaMA-11B", type: "Zero-shot", mae: 0.558, cal_mae: 0.393, pearson: 0.075, spearman: 0.085, ccc: 0.074, sigma: 0.541, ord_acc: 0.561, highlight: false, dot: "#64748b" },
+  ],
+  "smell": [
+    { model: "FoodSense-VL (Ours)", type: "Fine-tuned (S2)", mae: 0.544, cal_mae: 0.395, pearson: 0.308, spearman: 0.285, ccc: 0.256, sigma: 0.488, ord_acc: 0.443, highlight: true, dot: "#6366f1" },
+    { model: "LLaVA-v1.6-34B", type: "Zero-shot", mae: 0.407, cal_mae: 0.403, pearson: 0.280, spearman: 0.287, ccc: 0.214, sigma: 0.252, ord_acc: 0.668, highlight: false, dot: "#64748b" },
+    { model: "Qwen2.5-VL-32B", type: "Zero-shot", mae: 0.428, cal_mae: 0.407, pearson: 0.244, spearman: 0.207, ccc: 0.171, sigma: 0.254, ord_acc: 0.671, highlight: false, dot: "#64748b" },
+    { model: "Gemma 3 27B-IT", type: "Zero-shot", mae: 0.508, cal_mae: 0.407, pearson: 0.228, spearman: 0.247, ccc: 0.192, sigma: 0.382, ord_acc: 0.486, highlight: false, dot: "#64748b" },
+    { model: "InternVL2.5-26B", type: "Zero-shot", mae: 0.430, cal_mae: 0.422, pearson: 0.105, spearman: 0.068, ccc: 0.025, sigma: 0.074, ord_acc: 0.640, highlight: false, dot: "#64748b" },
+    { model: "Food-LLaMA-11B", type: "Zero-shot", mae: 0.764, cal_mae: 0.405, pearson: 0.013, spearman: 0.036, ccc: 0.010, sigma: 0.749, ord_acc: 0.415, highlight: false, dot: "#64748b" },
+  ],
+  "texture": [
+    { model: "FoodSense-VL (Ours)", type: "Fine-tuned (S2)", mae: 0.687, cal_mae: 0.389, pearson: 0.225, spearman: 0.195, ccc: 0.204, sigma: 0.759, ord_acc: 0.527, highlight: true, dot: "#6366f1" },
+    { model: "Gemma 3 27B-IT", type: "Zero-shot", mae: 0.468, cal_mae: 0.386, pearson: 0.255, spearman: 0.202, ccc: 0.248, sigma: 0.461, ord_acc: 0.598, highlight: false, dot: "#64748b" },
+    { model: "InternVL2.5-26B", type: "Zero-shot", mae: 0.526, cal_mae: 0.386, pearson: 0.232, spearman: 0.201, ccc: 0.113, sigma: 0.245, ord_acc: 0.594, highlight: false, dot: "#64748b" },
+    { model: "Qwen2.5-VL-32B", type: "Zero-shot", mae: 0.586, cal_mae: 0.393, pearson: 0.175, spearman: 0.136, ccc: 0.085, sigma: 0.293, ord_acc: 0.610, highlight: false, dot: "#64748b" },
+    { model: "Food-LLaMA-11B", type: "Zero-shot", mae: 0.532, cal_mae: 0.386, pearson: 0.123, spearman: 0.108, ccc: 0.097, sigma: 0.421, ord_acc: 0.618, highlight: false, dot: "#64748b" },
+    { model: "LLaVA-v1.6-34B", type: "Zero-shot", mae: 0.413, cal_mae: 0.392, pearson: 0.115, spearman: 0.135, ccc: 0.052, sigma: 0.149, ord_acc: 0.616, highlight: false, dot: "#64748b" },
+  ],
+  "sound": [
+    { model: "Gemma 3 27B-IT", type: "Zero-shot", mae: 1.060, cal_mae: 0.294, pearson: 0.308, spearman: 0.263, ccc: 0.060, sigma: 0.349, ord_acc: 0.502, highlight: false, dot: "#64748b" },
+    { model: "Qwen2.5-VL-32B", type: "Zero-shot", mae: 0.522, cal_mae: 0.294, pearson: 0.280, spearman: 0.200, ccc: 0.199, sigma: 0.560, ord_acc: 0.666, highlight: false, dot: "#64748b" },
+    { model: "FoodSense-VL (Ours)", type: "Fine-tuned (S2)", mae: 0.889, cal_mae: 0.295, pearson: 0.275, spearman: 0.259, ccc: 0.109, sigma: 0.619, ord_acc: 0.491, highlight: true, dot: "#6366f1" },
+    { model: "InternVL2.5-26B", type: "Zero-shot", mae: 0.311, cal_mae: 0.303, pearson: 0.187, spearman: 0.138, ccc: 0.143, sigma: 0.181, ord_acc: 0.717, highlight: false, dot: "#64748b" },
+    { model: "LLaVA-v1.6-34B", type: "Zero-shot", mae: 0.436, cal_mae: 0.303, pearson: 0.174, spearman: 0.151, ccc: 0.146, sigma: 0.398, ord_acc: 0.712, highlight: false, dot: "#64748b" },
+    { model: "Food-LLaMA-11B", type: "Zero-shot", mae: 1.108, cal_mae: 0.299, pearson: 0.109, spearman: 0.127, ccc: 0.040, sigma: 0.889, ord_acc: 0.300, highlight: false, dot: "#64748b" },
+  ]
+};
+
+function fmt(v, d=3) {
+  if (v === null || v === undefined) return '<span class="worst">N/A</span>';
+  return v.toFixed(d);
+}
+
+function renderTable(sense) {
+  const data = BENCHMARK[sense];
+  const tbody = document.getElementById('benchmark-body');
+  tbody.innerHTML = '';
+
+  data.forEach(row => {
+    const tr = document.createElement('tr');
+    if (row.highlight) tr.className = 'row-highlight';
+    if (row.trap) tr.className = 'row-trap';
+
+    tr.innerHTML = `
+      <td><span class="model-tag"><span class="model-dot" style="background:${row.dot}"></span>${row.model}</span></td>
+      <td style="color: var(--color-text-muted); font-size: 0.8rem;">${row.type}</td>
+      <td>${fmt(row.mae)}</td>
+      <td>${fmt(row.cal_mae)}</td>
+      <td>${fmt(row.pearson)}</td>
+      <td>${fmt(row.spearman)}</td>
+      <td>${fmt(row.ccc)}</td>
+      <td>${fmt(row.sigma)}</td>
+      <td>${fmt(row.ord_acc)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function showSense(sense) {
+  document.querySelectorAll('.sense-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  renderTable(sense);
+}
+
+// Copy citation
+function copyCitation() {
+  const text = document.getElementById('bibtex').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+    setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i> Copy'; }, 2000);
+  });
+}
+
+// Initial render
+renderTable('overall');
+</script>
+
+</body>
+</html>
