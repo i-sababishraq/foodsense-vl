@@ -261,8 +261,9 @@ PY
 "
 
   echo ""
-  echo "Next: Run inference with:"
-  echo "  ADAPTER_DIR=$OUTPUT_DIR/<best-checkpoint> sbatch slurm/infer.sbatch"
+  echo "Next: Evaluate on the test split:"
+  echo "  ADAPTER_DIR=$OUTPUT_DIR/<best-checkpoint> OUTPUT_DIR=eval_outputs/stage2_eval sbatch slurm/eval_foodsensevl.sbatch"
+  echo "  Or quick demo (5 images): python inference/foodsensevl.py --adapter_dir $OUTPUT_DIR/<best-checkpoint>"
 else
   echo "============================================"
   echo "TRAINING FAILED (exit code: $STATUS)"
