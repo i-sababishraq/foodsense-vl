@@ -5,6 +5,7 @@
 **Predicting Taste, Smell, Texture, and Sound from Food Images**
 
 [![Conference](https://img.shields.io/badge/CVPR_Workshop-Meta_Food_2026-4b44ce.svg)]()
+[![Paper](https://img.shields.io/badge/arXiv-2604.14388-b31b1b.svg)](https://arxiv.org/pdf/2604.14388)
 [![Project Page](https://img.shields.io/badge/Project-Page-green)](https://i-sababishraq.github.io/foodsense-vl/)
 [![Dataset](https://img.shields.io/badge/%F0%9F%A4%97%20Dataset-FoodSense-ffd21e)](https://huggingface.co/datasets/sababishraq/foodsense-dataset)
 [![Model](https://img.shields.io/badge/%F0%9F%A4%97%20Model-FoodSense--VL-ff9d00)](https://huggingface.co/sababishraq/foodsense-vl)
@@ -12,7 +13,7 @@
 
 *Can a vision-language model predict what food tastes, smells, feels, and sounds like — just from a photo?*
 
-[Paper]() · [Project Page](https://i-sababishraq.github.io/foodsense-vl/) · [Dataset](https://huggingface.co/datasets/sababishraq/foodsense-dataset) · [Model](https://huggingface.co/sababishraq/foodsense-vl) · [Code](https://github.com/i-sababishraq/foodsense-vl)
+[Paper](https://arxiv.org/pdf/2604.14388) · [Project Page](https://i-sababishraq.github.io/foodsense-vl/) · [Dataset](https://huggingface.co/datasets/sababishraq/foodsense-dataset) · [Model](https://huggingface.co/sababishraq/foodsense-vl) · [Code](https://github.com/i-sababishraq/foodsense-vl)
 
 </div>
 
@@ -22,6 +23,7 @@
 
 - **Apr 2026**: Accepted to **CVPR 2026 Workshop on Meta Food**.
 - **Apr 2026**: Dataset, model weights, and code released publicly.
+- **Paper**: [arXiv:2604.14388](https://arxiv.org/pdf/2604.14388) (PDF).
 
 ---
 
@@ -251,8 +253,17 @@ foodsense-vl/
 │   ├── internvl.py           # InternVL baseline
 │   ├── qwen.py               # Qwen2.5-VL baseline
 │   └── foodllama.py          # Food-LLaMA baseline
+├── docs/                     # Project website + optional HF dataset card template
+│   ├── index.html
+│   ├── assets/
+│   ├── hf_dataset_README.md  # Hugging Face dataset card (push via scripts/push_hf_dataset_readme.py)
+│   └── hf_model_README.md    # Hugging Face model card (push via scripts/push_hf_model_readme.py)
 ├── scripts/                  # Download + utility scripts
 │   ├── download_data.sh      # Download dataset from HuggingFace
+│   ├── upload_hf_dataset.py # Upload full CSV + images to HF dataset repo (maintainers)
+│   ├── push_hf_dataset_readme.py
+│   ├── push_hf_model_readme.py  # Upload model README.md to HF (paper link, etc.)
+│   ├── push_hf_readmes_ngc.sh   # Run both pushes inside NGC + sensory_env_ngc (recommended on Anvil)
 │   └── download_model.sh     # Download model weights from HuggingFace
 ├── slurm/                    # SLURM job templates (HPC)
 │   ├── train_stage1.sbatch
@@ -265,7 +276,6 @@ foodsense-vl/
 ├── requirements_internvl.txt # InternVL compatibility deps
 ├── environment.yml           # Conda environment
 ├── training_config.yaml      # Training hyperparameters
-└── docs/                     # Project website
 ```
 
 ## Citation
