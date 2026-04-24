@@ -292,10 +292,21 @@ setup_local_venv() {
     fi
   done
 
-  # Also check the existing conda env
-  CONDA_PYTHON="/anvil/projects/x-soc250046/x-sishraq/sensory_env/bin/python3.10"
-  if [ -z "$PYTHON_BIN" ] && [ -x "$CONDA_PYTHON" ]; then
-    PYTHON_BIN="$CONDA_PYTHON"
+  # Fallback: check if conda or module-loaded Python is available
+  if [ -z "$PYTHON_BIN" ]; then
+    # Try loading anaconda module (common on HPC clusters)
+    module load anaconda 2>/dev/null || true
+    for py in python3.10 python3.11 python3.12 python3; do
+      if command -v "$py" &>/dev/null; then
+        PY_VER=$("$py" --version 2>&1 | grep -oP '\d+\.\d+')
+        PY_MAJOR=$(echo "$PY_VER" | cut -d. -f1)
+        PY_MINOR=$(echo "$PY_VER" | cut -d. -f2)
+        if [ "$PY_MAJOR" -ge 3 ] && [ "$PY_MINOR" -ge 10 ]; then
+          PYTHON_BIN="$py"
+          break
+        fi
+      fi
+    done
   fi
 
   if [ -z "$PYTHON_BIN" ]; then

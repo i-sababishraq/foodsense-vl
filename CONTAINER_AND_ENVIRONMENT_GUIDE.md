@@ -436,7 +436,7 @@ python -u your_script.py --your_args
 # ═══════════════════════════════════════════════════════════
 # 1. Clone project
 # ═══════════════════════════════════════════════════════════
-git clone https://github.com/sishraq/foodsense-vl.git
+git clone https://github.com/i-sababishraq/foodsense-vl.git
 cd foodsense-vl
 
 # ═══════════════════════════════════════════════════════════
