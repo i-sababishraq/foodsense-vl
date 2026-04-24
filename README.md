@@ -57,6 +57,8 @@ The dataset is hosted on [HuggingFace](https://huggingface.co/datasets/sababishr
 Download everything:
 
 ```bash
+# Set HF cache to a local directory (avoids permission issues on shared filesystems)
+export HF_HOME=$PWD/.hf_cache
 bash scripts/download_data.sh
 ```
 
@@ -76,9 +78,11 @@ cd foodsense-vl
 
 # Option A: Conda
 conda env create -f environment.yml
-conda activate multimodal_sensory_env
+conda activate foodsense_env
 
 # Option B: pip
+conda create -n foodsense_env python=3.10 -y
+conda activate foodsense_env
 pip install -r requirements.txt
 
 # Flash Attention (recommended for faster inference)
@@ -87,7 +91,19 @@ pip install flash-attn --no-build-isolation
 
 > **InternVL users:** InternVL 2.5 requires `transformers==4.48.3`, which is incompatible with the main environment. Install a separate venv using `requirements_internvl.txt`. See instructions inside.
 
-> **HPC users:** For Apptainer/Singularity container setup on SLURM clusters, see [`CONTAINER_AND_ENVIRONMENT_GUIDE.md`](CONTAINER_AND_ENVIRONMENT_GUIDE.md).
+> **HPC users:** On SLURM clusters (e.g., Anvil, Bridges-2), use the pre-built Singularity container which already includes PyTorch + Flash Attention:
+> ```bash
+> # One-time: provision a venv inside the container
+> singularity exec --writable-tmpfs --bind "$PWD:/workspace" --pwd /workspace \
+>   containers/flash_attn.sif bash -lc '
+>   pip install -q virtualenv
+>   python3 -m virtualenv --system-site-packages /workspace/sensory_env_ngc
+>   source /workspace/sensory_env_ngc/bin/activate
+>   pip install transformers accelerate peft bitsandbytes pandas pillow \
+>     tqdm scikit-learn scipy einops datasets python-dotenv "numpy<2"
+> '
+> ```
+> For full details, see [`CONTAINER_AND_ENVIRONMENT_GUIDE.md`](CONTAINER_AND_ENVIRONMENT_GUIDE.md).
 
 ## Quick Start
 
@@ -97,6 +113,7 @@ cp .env.example .env
 # Edit .env and add your HF_TOKEN
 
 # 2. Download data and model weights
+export HF_HOME=$PWD/.hf_cache
 bash scripts/download_data.sh
 bash scripts/download_model.sh
 
@@ -130,7 +147,7 @@ Fine-tune Gemma 3 27B-IT on human sensory annotations (ratings + descriptors onl
 ```bash
 python train.py \
     --model_name google/gemma-3-27b-it \
-    --human_csv data/FINAL_DATASET_COMPLETE_with_rescaling.csv \
+    --human_csv data/metadata.csv \
     --image_dir data/Images \
     --output_dir checkpoints/stage1 \
     --human_only \
@@ -143,7 +160,7 @@ First, generate synthetic reasoning targets:
 
 ```bash
 python precompute_targets.py \
-    --human_csv data/FINAL_DATASET_COMPLETE_with_rescaling.csv \
+    --human_csv data/metadata.csv \
     --image_dir data/Images \
     --output mammoth_targets.json
 ```

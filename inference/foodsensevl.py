@@ -21,7 +21,7 @@ from dataset import load_human_sensory_data
 from config.prompts import USER_PROMPT
 
 IMAGE_DIR = "data/Images"
-HUMAN_CSV = "data/FINAL_DATASET_COMPLETE_with_rescaling.csv"
+HUMAN_CSV = "data/metadata.csv"
 
 # 5 sample images for quick demo
 IMAGE_PATHS = [
