@@ -676,7 +676,7 @@
 
   <p class="hero-desc">
     Predicting taste, smell, texture, and sound from food images.
-    A 544K-image dataset, human-annotated benchmark, and two-stage
+    A human-annotated sensory benchmark and two-stage
     vision-language model for multisensory food understanding.
   </p>
 
@@ -706,16 +706,16 @@
 
   <div class="stats-row">
     <div class="stat-card">
-      <div class="stat-value" style="color: var(--color-accent-light);">544K</div>
-      <div class="stat-label">Food Images</div>
+      <div class="stat-value" style="color: var(--color-accent-light);">2,987</div>
+      <div class="stat-label">Annotated Food Images</div>
     </div>
     <div class="stat-card">
-      <div class="stat-value" style="color: var(--color-taste);">4</div>
+      <div class="stat-value" style="color: var(--color-taste);">66,842</div>
+      <div class="stat-label">Participant&ndash;Image Annotations</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color: var(--color-smell);">4</div>
       <div class="stat-label">Sensory Modalities</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value" style="color: var(--color-smell);">438</div>
-      <div class="stat-label">Human-Annotated Test</div>
     </div>
     <div class="stat-card">
       <div class="stat-value" style="color: var(--color-sound);">6</div>
@@ -738,14 +738,13 @@
     Humans routinely infer non-visual sensory properties of food&mdash;imagining the crunch of a chip
     or the aroma of fresh bread&mdash;from visual appearance alone. We formalize this problem as
     <strong>cross-sensory inference from visual cues</strong> and introduce <strong>FoodSense</strong>,
-    a large-scale dataset pairing 544,312 Yelp food images with crowd-sourced review text, and a
-    human-annotated evaluation set of 438 images scored on four sensory dimensions: taste, smell,
-    texture, and sound.
+    a human-annotated dataset of 2,987 food images with 66,842 participant&ndash;image annotations
+    across four sensory dimensions: taste, smell, texture, and sound.
   </p>
   <p class="section-subtitle" style="margin-top: 16px;">
     Building on this resource, we propose <strong>FoodSense-VL</strong>, a two-stage QLoRA fine-tuning
     pipeline applied to Gemma 3 27B that first learns from human sensory annotations, then expands
-    using MAmmoTH-style synthetic targets. We benchmark FoodSense-VL against seven vision-language
+    using MAmmoTH-style synthetic targets. We benchmark FoodSense-VL against five vision-language
     models and reveal that conventional MAE rankings can be misleading&mdash;a constant-mean baseline
     achieves the lowest MAE of all, underscoring the need for correlation-aware evaluation.
   </p>
@@ -762,21 +761,21 @@
         <i class="fas fa-database"></i>
       </div>
       <h3>FoodSense Dataset</h3>
-      <p>544,312 food images paired with Yelp review text, spanning diverse cuisines and restaurants. Includes a 438-image human-annotated evaluation set scored on four sensory dimensions.</p>
+      <p>2,987 food images annotated by 66,842 participant&ndash;image assessments across four sensory dimensions (taste, smell, texture, sound), with ratings on a 1&ndash;5 scale and free-text descriptors.</p>
     </div>
     <div class="card">
       <div class="card-icon" style="background: rgba(99, 102, 241, 0.1); color: var(--color-accent-light);">
         <i class="fas fa-brain"></i>
       </div>
       <h3>FoodSense-VL</h3>
-      <p>Two-stage QLoRA fine-tuning of Gemma 3 27B-IT. Stage 1 learns from 438 human annotations; Stage 2 expands via MAmmoTH-style synthetic targets from 3,590 training images.</p>
+      <p>Two-stage QLoRA fine-tuning of Gemma 3 27B-IT. Stage 1 learns from 2,185 human-annotated images (43,758 ratings); Stage 2 expands via MAmmoTH-style synthetic targets.</p>
     </div>
     <div class="card">
       <div class="card-icon" style="background: rgba(34, 197, 94, 0.1); color: var(--color-success);">
         <i class="fas fa-chart-bar"></i>
       </div>
       <h3>Comprehensive Benchmark</h3>
-      <p>Nine models evaluated across seven metrics (MAE, CalMAE, Pearson, Spearman, CCC, Ordinal Accuracy, &sigma;<sub>pred</sub>) with human inter-rater agreement as ceiling.</p>
+      <p>Six models evaluated across six metrics (MAE, Pearson, Spearman, CCC, Ordinal Accuracy, &sigma;<sub>pred</sub>) with human inter-rater agreement as ceiling.</p>
     </div>
     <div class="card">
       <div class="card-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--color-warning);">
@@ -807,7 +806,7 @@
     <div>
       <h3 style="margin-bottom: 16px; font-size: 1.05rem;">Stage 1: Human Sensory Alignment</h3>
       <p style="color: var(--color-text-secondary); font-size: 0.9rem; line-height: 1.7;">
-        Fine-tunes Gemma 3 on 438 human-annotated images using 4-bit QLoRA.
+        Fine-tunes Gemma 3 on 2,185 human-annotated images (43,758 ratings) using 4-bit QLoRA.
         Each training example pairs a food image with ground-truth ratings (1&ndash;5 scale)
         and descriptive rationales for taste, smell, texture, and sound.
         This stage teaches the model to ground sensory language in visual features.
@@ -877,7 +876,7 @@
 <!-- ============================== RESULTS ============================== -->
 <section class="section" id="results">
   <div class="section-label">Results</div>
-  <h2 class="section-title">Nine-Model Benchmark</h2>
+  <h2 class="section-title">Six-Model Benchmark</h2>
   <p class="section-subtitle">
     All models evaluated on 438 human-annotated test images across four sensory dimensions.
     Human inter-rater LOO MAE = 0.793 provides the agreement ceiling.
@@ -900,7 +899,7 @@
           <th>Model</th>
           <th>Type</th>
           <th>MAE &darr;</th>
-          <th>Cal. MAE &darr;</th>
+
           <th>Pearson r &uarr;</th>
           <th>Spearman &rho; &uarr;</th>
           <th>Lin's CCC &uarr;</th>
@@ -930,22 +929,22 @@
   <div class="section-label">Dataset</div>
   <h2 class="section-title">FoodSense Dataset</h2>
   <p class="section-subtitle">
-    The largest food image collection purpose-built for multisensory prediction,
-    sourced from Yelp and annotated by crowd workers.
+    A human-annotated sensory benchmark of 2,987 food images with
+    66,842 participant&ndash;image annotations across four sensory dimensions.
   </p>
 
   <div class="dataset-stats">
     <div class="ds-stat">
-      <div class="ds-value">544,312</div>
-      <div class="ds-label">Total food images from Yelp</div>
+      <div class="ds-value">2,987</div>
+      <div class="ds-label">Annotated food images</div>
     </div>
     <div class="ds-stat">
-      <div class="ds-value">438</div>
-      <div class="ds-label">Human-annotated test images</div>
+      <div class="ds-value">66,842</div>
+      <div class="ds-label">Participant&ndash;image annotations</div>
     </div>
     <div class="ds-stat">
-      <div class="ds-value">3,590</div>
-      <div class="ds-label">Training images (with review text)</div>
+      <div class="ds-value">2,185</div>
+      <div class="ds-label">Training images</div>
     </div>
     <div class="ds-stat">
       <div class="ds-value">4</div>
@@ -1003,7 +1002,7 @@
         <i class="fas fa-table"></i>
       </div>
       <h3>Benchmark Data</h3>
-      <p>All predictions (JSONL) and evaluation metrics (CSV/JSON) for 9 models across 5 senses.</p>
+      <p>All predictions (JSONL) and evaluation metrics (CSV/JSON) for 6 models across 4 senses.</p>
     </div>
   </div>
 </section>
@@ -1147,7 +1146,7 @@ function renderTable(sense) {
       <td><span class="model-tag"><span class="model-dot" style="background:${row.dot}"></span>${row.model}</span></td>
       <td style="color: var(--color-text-muted); font-size: 0.8rem;">${row.type}</td>
       <td>${fmt(row.mae)}</td>
-      <td>${fmt(row.cal_mae)}</td>
+
       <td>${fmt(row.pearson)}</td>
       <td>${fmt(row.spearman)}</td>
       <td>${fmt(row.ccc)}</td>
