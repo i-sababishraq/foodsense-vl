@@ -349,11 +349,14 @@ def load_human_sensory_data(
     require_all_caninfer: bool = True,
 ) -> pd.DataFrame:
     """
-    Load the FINAL_DATASET_COMPLETE_with_rescaling.csv and prepare it for
-    VLM training with REAL per-sense ratings and descriptions.
+    Load the human sensory CSV (``metadata.csv`` from the HuggingFace release,
+    or the original FINAL_DATASET_COMPLETE_with_rescaling.csv) and prepare it
+    for VLM training with REAL per-sense ratings and descriptions.
 
-    Filters to rows where CanInfer_* == 1 and maps Image_Name to the
-    local image directory.
+    Filters to rows where CanInfer_* == 1 and maps each row to an image in
+    ``image_dir``. Images are matched on ``file_name`` when the column exists
+    (HuggingFace release), otherwise on ``Image_Name``. Rows whose image is
+    not found are dropped and reported.
 
     Returns a DataFrame with columns compatible with GemmaVLMDataset:
         review_id, business_id, review_text_preview, review_rating,
@@ -383,14 +386,23 @@ def load_human_sensory_data(
         print(f"[Human data] After CanInfer filter (any): {len(df):,} rows")
 
     # ---------- Map image paths ----------
-    from pathlib import Path
+    # In the HuggingFace release, ``file_name`` is the exact JPEG name in the
+    # repo. ``Image_Name`` is the study export's basename and differs for 72
+    # images (stored as "Copy of <Image_Name>"), so prefer ``file_name``.
     img_dir = Path(image_dir)
-    existing_files = set(img_dir.iterdir()) if img_dir.exists() else set()
-    existing_names = {f.name for f in existing_files}
+    if not img_dir.is_dir():
+        raise FileNotFoundError(f"Image directory not found: {image_dir}")
+    existing_names = {f.name for f in img_dir.iterdir()}
+    name_col = 'file_name' if 'file_name' in df.columns else 'Image_Name'
 
-    df['_img_found'] = df['Image_Name'].apply(lambda n: n in existing_names)
+    df['_img_found'] = df[name_col].isin(existing_names)
     found = df['_img_found'].sum()
-    print(f"[Human data] Image match: {found:,}/{len(df):,} rows have images in {image_dir}")
+    print(f"[Human data] Image match on '{name_col}': {found:,}/{len(df):,} rows "
+          f"have images in {image_dir}")
+    missing = sorted(df.loc[~df['_img_found'], name_col].unique())
+    if missing:
+        print(f"[Human data] WARNING: dropping {len(missing):,} images not found in "
+              f"{image_dir} (e.g. {missing[:3]})")
     df = df[df['_img_found']].copy()
     df.drop(columns=['_img_found'], inplace=True)
 
@@ -413,8 +425,8 @@ def load_human_sensory_data(
     ) / 4.0
 
     # Image path as a list (expected by GemmaVLMDataset)
-    df['saved_path'] = df['Image_Name'].apply(lambda n: [n])
-    df['filename'] = df['Image_Name'].apply(lambda n: [n])
+    df['saved_path'] = df[name_col].apply(lambda n: [n])
+    df['filename'] = df[name_col].apply(lambda n: [n])
 
     # IDs — unique per participant × image
     df['review_id'] = (
@@ -442,38 +454,93 @@ def load_human_sensory_data(
     return df
 
 
+# Paper train/val/test image lists (one filename per line). See splits/README.md.
+DEFAULT_SPLIT_DIR = Path(__file__).resolve().parent / "splits"
+
+
+def _read_split_file(path: Path) -> set:
+    with open(path, encoding="utf-8") as f:
+        return {line.strip() for line in f if line.strip()}
+
+
 def create_image_level_splits(
     df: pd.DataFrame,
     test_size: float = 0.15,
     val_size: float = 0.10,
     random_state: int = 42,
+    split_dir: Optional[Union[str, Path]] = DEFAULT_SPLIT_DIR,
 ):
     """
     Split data so that all annotations for the same *image* stay in the
     same split, preventing data leakage.
 
-    The human dataset has ~2,915 unique images with ~20 participant ratings
-    each.  We split at the image level and stratify by the image's mean
-    rating (binned) so each split has a similar rating distribution.
+    By default the split is read from the fixed image lists in ``split_dir``
+    (the paper split: 2,185 / 292 / 438 train / val / test images). Rows whose
+    image is in none of the lists (e.g. the 72 images in
+    ``splits/excluded_images.txt``) are dropped. Filtering ``df`` beforehand
+    (Stage-2 MAmmoTH filtering, ``--max_samples``) only removes rows; it never
+    moves an image to another split.
+
+    With ``split_dir=None`` the split is recomputed: images are stratified by
+    their binned mean rating using ``test_size``, ``val_size`` and
+    ``random_state``. The result depends on the exact set of images and rows in
+    ``df``; the paper split was computed on 2,915 images, so recomputing on the
+    full 2,987-image release gives a different split.
 
     Args:
         df: DataFrame from ``load_human_sensory_data()``.
             Must contain ``saved_path`` (list) and ``review_rating``.
-        test_size:  Fraction of *images* for the test set.
-        val_size:   Fraction of *images* for the validation set.
-        random_state: Random seed.
+        test_size:  Fraction of *images* for the test set (recompute only).
+        val_size:   Fraction of *images* for the validation set (recompute only).
+        random_state: Random seed (recompute only).
+        split_dir:  Directory with ``{train,val,test}_images.txt``, or None to
+            recompute the split.
 
     Returns:
         train_df, val_df, test_df
     """
-    from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
-
     df = df.copy()
 
     # Extract image name from saved_path (stored as single-element list)
     df['_image_name'] = df['saved_path'].apply(
         lambda x: x[0] if isinstance(x, list) and len(x) > 0 else str(x)
     )
+
+    if split_dir is not None:
+        train_images, val_images, test_images = (
+            _read_split_file(Path(split_dir) / f"{name}_images.txt")
+            for name in ("train", "val", "test")
+        )
+        print(f"[Image-level split] Fixed splits from {split_dir}: "
+              f"{df['_image_name'].nunique():,} unique images, {len(df):,} total rows")
+        unassigned = sorted(set(df['_image_name']) - train_images - val_images - test_images)
+        if unassigned:
+            print(f"  Excluded {len(unassigned):,} images not in any split "
+                  f"(e.g. {unassigned[:3]})")
+    else:
+        train_images, val_images, test_images = _stratified_image_split(
+            df, test_size, val_size, random_state
+        )
+
+    # --- assign rows to splits ---
+    splits = []
+    for name, images in (("Train", train_images), ("Val", val_images), ("Test", test_images)):
+        part = df[df['_image_name'].isin(images)]
+        print(f"  {name + ':':<6} {len(part):,} rows  ({part['_image_name'].nunique():,} images)")
+        splits.append(part.drop(columns=['_image_name']).copy())
+
+    train_df, val_df, test_df = splits
+    return train_df, val_df, test_df
+
+
+def _stratified_image_split(
+    df: pd.DataFrame,
+    test_size: float,
+    val_size: float,
+    random_state: int,
+):
+    """Stratified image-level split of ``df`` (needs ``_image_name``)."""
+    from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
 
     # Build image-level summary for stratification
     img_stats = (
@@ -520,19 +587,7 @@ def create_image_level_splits(
     train_images = set(tv_stats.iloc[tr_idx]['_image_name'])
     val_images = set(tv_stats.iloc[va_idx]['_image_name'])
 
-    # --- assign rows to splits ---
-    train_df = df[df['_image_name'].isin(train_images)].drop(columns=['_image_name']).copy()
-    val_df   = df[df['_image_name'].isin(val_images)].drop(columns=['_image_name']).copy()
-    test_df  = df[df['_image_name'].isin(test_images)].drop(columns=['_image_name']).copy()
-
-    print(f"  Train: {len(train_df):,} rows  ({len(train_images):,} images)")
-    print(f"  Val:   {len(val_df):,} rows  ({len(val_images):,} images)")
-    print(f"  Test:  {len(test_df):,} rows  ({len(test_images):,} images)")
-
-    # Drop temp column from original df
-    df.drop(columns=['_image_name'], inplace=True, errors='ignore')
-
-    return train_df, val_df, test_df
+    return train_images, val_images, test_images
 
 if __name__ == "__main__":
     # Example usage

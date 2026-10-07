@@ -5,7 +5,8 @@ Create judge-filtered MAmmoTH-v2 target lookup.
 Reads mammoth_style_target_lookup_v2_gemma.json and removes entries
 where judge_rejected == True.  The resulting file can be used as
 --mammoth_targets in train.py so the training script
-never sees rejected expansions (it falls back to human descriptors).
+never sees rejected expansions. Stage 2 drops images without an entry;
+the fixed splits in splits/ keep every other image in its split.
 
 Usage:
     python scripts/create_judge_filtered_targets.py \

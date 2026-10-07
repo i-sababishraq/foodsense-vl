@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-REPO_ID="${HF_MODEL_REPO:-YOUR_USERNAME/foodsense-vl}"
+REPO_ID="${HF_MODEL_REPO:-sababishraq/foodsense-vl}"
 CKPT_DIR="checkpoints"
 TARGET_ADAPTER_DIR="${CKPT_DIR}/foodsense-vl_chkpt"
 

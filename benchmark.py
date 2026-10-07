@@ -14,7 +14,7 @@ Computes advanced metrics from existing predictions WITHOUT new inference:
 
 Usage:
   python benchmark.py
-  python benchmark.py --output_dir eval_outputs --human_csv data/FINAL_DATASET_COMPLETE_with_rescaling.csv
+  python benchmark.py --output_dir eval_outputs --human_csv data/metadata.csv
 """
 
 import argparse
@@ -415,7 +415,7 @@ def print_comparison_table(df: pd.DataFrame, human_agreement: Dict):
 
 def main():
     parser = argparse.ArgumentParser(description="Comprehensive Sensory Evaluation Benchmark")
-    parser.add_argument("--human_csv", type=str, default="data/FINAL_DATASET_COMPLETE_with_rescaling.csv")
+    parser.add_argument("--human_csv", type=str, default="data/metadata.csv")
     parser.add_argument("--image_dir", type=str, default="data/Images")
     parser.add_argument("--output_dir", type=str, default="eval_outputs")
     parser.add_argument(

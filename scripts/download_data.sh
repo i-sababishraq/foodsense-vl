@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-REPO_ID="${HF_DATASET_REPO:-YOUR_USERNAME/foodsense-dataset}"
+REPO_ID="${HF_DATASET_REPO:-sababishraq/foodsense-dataset}"
 DATA_DIR="data"
 
 echo "Downloading FoodSense dataset from: $REPO_ID"
@@ -18,14 +18,21 @@ if ! python -c "import huggingface_hub" 2>/dev/null; then
     exit 1
 fi
 
-# Download dataset files
+# Download dataset files. The HF repo stores the JPEGs at its root; put them
+# in data/Images/ (the default --image_dir) and the annotations in data/.
 python -c "
 from huggingface_hub import snapshot_download
 snapshot_download(
     repo_id='${REPO_ID}',
     repo_type='dataset',
     local_dir='${DATA_DIR}',
-    local_dir_use_symlinks=False,
+    allow_patterns=['metadata.csv', 'README.md'],
+)
+snapshot_download(
+    repo_id='${REPO_ID}',
+    repo_type='dataset',
+    local_dir='${DATA_DIR}/Images',
+    allow_patterns=['*.jpg'],
 )
 print('Download complete!')
 "
@@ -33,6 +40,6 @@ print('Download complete!')
 echo ""
 echo "Dataset downloaded to: $DATA_DIR/"
 echo "You should now have:"
-echo "  - data/FINAL_DATASET_COMPLETE_with_rescaling.csv"
-echo "  - data/Images/"
-echo "  - data/Apify_Yelp_photos/ (if included)"
+echo "  - data/metadata.csv  (66,842 annotations, 2,987 images)"
+echo "  - data/Images/       (food images)"
+echo "The paper's train/val/test image lists are in splits/ (see splits/README.md)."

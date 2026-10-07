@@ -22,7 +22,7 @@
 #   IMAGE_IDS='img1.jpg,img2.jpg'
 #   MAX_NEW_TOKENS=1024
 #   OUTPUT_DIR=eval_outputs/internvl_reeval_custom
-#   HUMAN_CSV=data/FINAL_DATASET_COMPLETE_with_rescaling.csv
+#   HUMAN_CSV=data/metadata.csv
 #   IMAGE_DIR=data/Images
 #   PROMPT='...'
 
@@ -44,7 +44,7 @@ else
 fi
 
 # Canonical data defaults requested for re-eval portability
-HUMAN_CSV="${HUMAN_CSV:-data/FINAL_DATASET_COMPLETE_with_rescaling.csv}"
+HUMAN_CSV="${HUMAN_CSV:-data/metadata.csv}"
 IMAGE_DIR="${IMAGE_DIR:-data/Images}"
 
 SPLIT="${SPLIT:-test}"
