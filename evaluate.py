@@ -725,7 +725,7 @@ def run_api_model(
 
 def main():
     parser = argparse.ArgumentParser(description="Sensory evaluation: compare models on test set")
-    parser.add_argument("--human_csv", type=str, default="data/FINAL_DATASET_COMPLETE_with_rescaling.csv")
+    parser.add_argument("--human_csv", type=str, default="data/metadata.csv")
     parser.add_argument("--image_dir", type=str, default="data/Images")
     parser.add_argument("--adapter_dir", type=str, default=None, help="Fine-tuned adapter (for ours, base)")
     parser.add_argument("--base_model", type=str, default="google/gemma-3-27b-it")

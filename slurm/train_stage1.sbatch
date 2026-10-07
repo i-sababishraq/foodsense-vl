@@ -133,7 +133,7 @@ FX
 '
 
 # Config
-HUMAN_CSV="data/FINAL_DATASET_COMPLETE_with_rescaling.csv"
+HUMAN_CSV="data/metadata.csv"
 IMAGE_DIR="data/Images"
 OUTPUT_DIR="checkpoints/gemma3_qlora_human_v2_${SLURM_JOB_ID}"
 MAX_STEPS="${MAX_STEPS:-300}"

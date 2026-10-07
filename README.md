@@ -52,7 +52,7 @@ The dataset is hosted on [HuggingFace](https://huggingface.co/datasets/sababishr
 | Annotated food images | 2,987 | Yelp food photos selected for sensory evaluation |
 | Human annotations | 66,842 | ~22 raters per image across 8,382 participants |
 | Sensory dimensions | 4 per image | Taste, Smell, Texture, Sound (1–5 scale + free-text descriptors) |
-| Training subset | 2,915 images | After CanInfer filtering (75/10/15 train/val/test split) |
+| Training subset | 2,915 images | 75/10/15 train/val/test split; 72 images excluded (see [Splits](#splits)) |
 
 Download everything:
 
@@ -61,6 +61,21 @@ Download everything:
 export HF_HOME=$PWD/.hf_cache
 bash scripts/download_data.sh
 ```
+
+This puts the annotations in `data/metadata.csv` and the images in `data/Images/`.
+
+### Splits
+
+The paper's image-level train/val/test split is fixed in [`splits/`](splits/) and is used by `train.py`, `evaluate.py` and `benchmark.py`:
+
+| Split | Images | Annotations |
+|:------|-------:|------------:|
+| Train | 2,185 | 43,758 |
+| Validation | 292 | 5,834 |
+| Test | 438 | 8,851 |
+| **Total** | **2,915** | **58,443** |
+
+Annotation counts include only rows where all four `CanInfer_*` flags are 1. That filter removes annotations, not images. The other 72 of the 2,987 released images (stored as `Copy of <id>.jpg` on HuggingFace) were left out of training and evaluation because of a filename mismatch in our pipeline. They are listed in `splits/excluded_images.txt`. The same assignment is available as the `split` column of `metadata.csv` on HuggingFace.
 
 ## Installation
 
@@ -258,6 +273,7 @@ MODEL_NAME=internvl python evaluate.py --model internvl --split test
 ```
 foodsense-vl/
 ├── dataset.py                # Data loading + train/val/test splits
+├── splits/                   # Fixed paper split (image filename lists)
 ├── train.py                  # QLoRA training (Stage 1 + Stage 2)
 ├── evaluate.py               # Multi-model evaluation pipeline
 ├── benchmark.py              # Benchmark from saved predictions

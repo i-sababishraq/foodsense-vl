@@ -975,8 +975,8 @@ def main():
     
     parser = argparse.ArgumentParser(description="QLoRA fine-tuning for Gemma 3 27B VLM")
     parser.add_argument("--human_csv", type=str,
-                        default="data/FINAL_DATASET_COMPLETE_with_rescaling.csv",
-                        help="Path to FINAL_DATASET_COMPLETE_with_rescaling.csv (human-annotated sensory data)")
+                        default="data/metadata.csv",
+                        help="Path to the human sensory CSV (metadata.csv from the HuggingFace dataset)")
     parser.add_argument("--image_dir", type=str,
                         default="data/Images",
                         help="Directory containing images for the human-annotated data")

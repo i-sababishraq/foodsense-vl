@@ -15,7 +15,7 @@ Output: mammoth_style_target_lookup_v2.json
 
 Usage:
   python precompute_targets.py \
-    --human_csv data/FINAL_DATASET_COMPLETE_with_rescaling.csv \
+    --human_csv data/metadata.csv \
     --image_dir data/Images \
     --output mammoth_style_target_lookup_v2.json \
     --model_name google/gemma-3-27b-it \
@@ -469,7 +469,7 @@ def _generate_expansion(
 
 def main():
     parser = argparse.ArgumentParser(description="MAmmoTH-v2 prose expansion")
-    parser.add_argument("--human_csv", type=str, default="data/FINAL_DATASET_COMPLETE_with_rescaling.csv")
+    parser.add_argument("--human_csv", type=str, default="data/metadata.csv")
     parser.add_argument("--image_dir", type=str, default="data/Images", help="Root directory containing all images.")
     parser.add_argument("--output", type=str, default="mammoth_style_target_lookup_v2.json")
     parser.add_argument("--model_name", type=str, default="google/gemma-3-27b-it")

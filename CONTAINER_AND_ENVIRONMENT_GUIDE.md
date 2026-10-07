@@ -473,9 +473,9 @@ rsync -a old_machine:/path/cache/huggingface/hub/models--google--gemma-3-27b-it 
 # ═══════════════════════════════════════════════════════════
 # 5. Copy data + checkpoints
 # ═══════════════════════════════════════════════════════════
-# Required:
-#   data/FINAL_DATASET_COMPLETE_with_rescaling.csv
-#   data/Images/  (2,915 images)
+# Required (bash scripts/download_data.sh):
+#   data/metadata.csv
+#   data/Images/  (train/val/test image lists are in splits/)
 #
 # Optional (for inference only):
 #   checkpoints/gemma3_qlora_human_v2_38390266/checkpoint-200

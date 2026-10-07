@@ -80,7 +80,7 @@ hardware:
 
 # ── Data ────────────────────────────────────────────────────────────────────
 data:
-  human_csv: data/FINAL_DATASET_COMPLETE_with_rescaling.csv
+  human_csv: data/metadata.csv
   image_dir: data/Images
   mammoth_targets: mammoth_style_target_lookup_v2_gemma.json
 

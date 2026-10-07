@@ -157,7 +157,7 @@ else
 fi
 
 # Select mode-specific args
-HUMAN_CSV="data/FINAL_DATASET_COMPLETE_with_rescaling.csv"
+HUMAN_CSV="data/metadata.csv"
 IMAGE_DIR="data/Images"
 
 if [ "$MODE" = "pilot" ]; then

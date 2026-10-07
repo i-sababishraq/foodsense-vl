@@ -1,0 +1,2 @@
+# Keep split lists byte-exact so splits/SHA256SUMS verifies on every OS
+splits/** text eol=lf
